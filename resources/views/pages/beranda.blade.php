@@ -60,7 +60,7 @@
 
         <!-- Right: Risiko Tertinggi Card -->
         <div class="flex justify-end">
-            <div class="bg-brandSurface p-8 rounded-[2rem] shadow-sm border border-gray-100 w-full max-w-md">
+            <div class="bg-brandSurface p-8 rounded-[2rem] shadow-sm border border-gray-100 w-full mx-auto w-full max-w-sm sm:max-w-none">
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <p class="text-xs font-bold text-gray-500 tracking-widest uppercase mb-1">Risiko Tertinggi</p>

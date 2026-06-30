@@ -18,6 +18,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Support\HtmlString;
+use App\Filament\Pages\AdminPetaPage;
+use App\Filament\Pages\AdminStatistikPage;
+use App\Filament\Pages\AdminExportPage;
 
 use Filament\Navigation\NavigationBuilder;
 use Filament\Navigation\NavigationGroup;
@@ -79,8 +82,8 @@ class AdminPanelProvider extends PanelProvider
                                 ->url(fn (): string => Pages\Dashboard::getUrl()),
                             NavigationItem::make('Peta')
                                 ->icon('heroicon-o-map')
-                                ->url(url('/peta'))
-                                ->openUrlInNewTab(),
+                                ->isActiveWhen(fn (): bool => request()->is('admin/peta*'))
+                                ->url(fn (): string => AdminPetaPage::getUrl()),
                         ]),
                     NavigationGroup::make('MANAJEMEN DATA')
                         ->items([
@@ -97,14 +100,14 @@ class AdminPanelProvider extends PanelProvider
                         ->items([
                             NavigationItem::make('Statistik & Analisis')
                                 ->icon('heroicon-o-chart-bar')
-                                ->url(url('/visualisasi'))
-                                ->openUrlInNewTab(),
+                                ->isActiveWhen(fn (): bool => request()->is('admin/statistik-analisis*'))
+                                ->url(fn (): string => AdminStatistikPage::getUrl()),
                             NavigationItem::make('Export Data')
                                 ->icon('heroicon-o-arrow-down-tray')
-                                ->url(url('/laporan'))
-                                ->openUrlInNewTab(),
+                                ->isActiveWhen(fn (): bool => request()->is('admin/export-data*'))
+                                ->url(fn (): string => AdminExportPage::getUrl()),
                         ]),
-                    NavigationGroup::make('REFERENSI')
+                    NavigationGroup::make('MASTER DATA')
                         ->items([
                             ...DesaResource::getNavigationItems(),
                             ...KecamatanResource::getNavigationItems(),

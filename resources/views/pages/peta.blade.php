@@ -16,17 +16,67 @@
         .light-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .light-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.1); border-radius: 10px; }
         .light-scrollbar:hover::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); }
+
+        @media (max-width: 1023px) {
+            #map {
+                min-height: 430px;
+            }
+
+            #mobile-control-panel {
+                height: 100vh;
+                max-height: 100vh;
+            }
+
+            body.mobile-panel-open {
+                overflow: hidden;
+            }
+        }
     </style>
 @endpush
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)] min-h-[700px] items-stretch mt-2 mb-10">
+
+    <!-- Mobile Control Button -->
+    <div class="lg:hidden mb-4">
+        <button
+            type="button"
+            onclick="openMobileControlPanel()"
+            class="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold text-sm px-4 py-3 rounded-2xl shadow-md"
+        >
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            Panel Kontrol Peta
+        </button>
+        </div>
+
+        <!-- Mobile Control Overlay -->
+        <div
+            id="mobile-control-overlay"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden lg:hidden"
+            onclick="closeMobileControlPanel()"
+        ></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[calc(100vh-120px)] min-h-0 lg:min-h-[700px] items-stretch mt-2 mb-10 relative">
 
     <!-- Left Panel: Control Panel -->
-    <div class="lg:col-span-3 bg-primary rounded-[2rem] text-white flex flex-col overflow-hidden shadow-lg border border-primary/20 relative">
+        <div
+            id="mobile-control-panel"
+            class="fixed lg:static left-0 top-0 bottom-0 z-50 w-[86vw] max-w-[340px] lg:w-auto lg:max-w-none lg:col-span-3 bg-primary rounded-r-[2rem] lg:rounded-[2rem] text-white flex flex-col overflow-hidden shadow-2xl lg:shadow-lg border border-primary/20 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
+        >
         <div class="p-6 pb-4">
-            <p class="text-[10px] font-bold text-blue-200 tracking-widest uppercase mb-1">Panel Kontrol</p>
-            <h2 class="text-2xl font-bold text-white mb-6">Peta Bencana</h2>
+            <div class="flex items-start justify-between gap-4 mb-6">
+                <div>
+                    <p class="text-[10px] font-bold text-blue-200 tracking-widest uppercase mb-1">Panel Kontrol</p>
+                    <h2 class="text-2xl font-bold text-white">Peta Bencana</h2>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="closeMobileControlPanel()"
+                    class="lg:hidden w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                    <i data-lucide="x" class="w-5 h-5 text-white"></i>
+                </button>
+            </div>
 
             <!-- Date Filter -->
             <div class="mb-5">
@@ -69,9 +119,9 @@
     </div> <!-- Close Left Panel -->
 
     <!-- PDF Export Wrapper for Map and Details -->
-    <div id="export-area" class="lg:col-span-9 grid grid-cols-1 lg:grid-cols-9 gap-6 h-full w-full bg-slate-50">
+    <div id="export-area" class="lg:col-span-9 grid grid-cols-1 lg:grid-cols-9 gap-6 h-auto lg:h-full w-full bg-slate-50">
         <!-- Center Panel: Map -->
-        <div id="export-map-only" class="lg:col-span-6 bg-brandSurface rounded-[2rem] shadow-sm border border-gray-100 p-2 flex flex-col relative">
+        <div id="export-map-only" class="lg:col-span-6 bg-brandSurface rounded-[2rem] shadow-sm border border-gray-100 p-2 flex flex-col relative overflow-hidden">
         <div class="flex-1 rounded-[1.5rem] overflow-hidden relative border border-gray-200 shadow-inner">
             <div id="map"></div>
         </div>
@@ -231,6 +281,36 @@
     var searchInput = document.getElementById('searchKecamatan');
     var sdInput = document.getElementById('filterStartDate');
     var edInput = document.getElementById('filterEndDate');
+
+    function openMobileControlPanel() {
+        var panel = document.getElementById('mobile-control-panel');
+        var overlay = document.getElementById('mobile-control-overlay');
+
+        if (!panel || !overlay) return;
+
+        panel.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        document.body.classList.add('mobile-panel-open');
+
+        // setTimeout(function() {
+        //     map.invalidateSize();
+        // }, 300);
+    }
+
+    function closeMobileControlPanel() {
+        var panel = document.getElementById('mobile-control-panel');
+        var overlay = document.getElementById('mobile-control-overlay');
+
+        if (!panel || !overlay) return;
+
+        panel.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        document.body.classList.remove('mobile-panel-open');
+
+        // setTimeout(function() {
+        //     map.invalidateSize();
+        // }, 300);
+    }
 
     // Initialize Map
     map = L.map('map', { scrollWheelZoom: false, zoomControl: false, preferCanvas: true }).setView([-6.238270, 106.975571], 10);
@@ -433,6 +513,9 @@
                 layer.fire('click');
                 // Pan map
                 map.panTo(layer.getBounds().getCenter());
+                if (window.innerWidth < 1024) {
+                    closeMobileControlPanel();
+                }
             }
         });
     }
@@ -453,6 +536,10 @@
 
             currentFilterType = this.getAttribute('data-type');
             refreshData();
+            
+            if (window.innerWidth < 1024) {
+                closeMobileControlPanel();
+            }
         });
     });
 

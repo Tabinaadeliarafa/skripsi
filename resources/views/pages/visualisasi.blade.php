@@ -90,7 +90,7 @@
         chart: {
             type: 'donut',
             height: 300,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Inter, poppins',
         },
         labels: jenisLabels,
         colors: pieColors,
@@ -134,7 +134,7 @@
         chart: {
             type: 'bar',
             height: 300,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Inter, poppins',
             toolbar: { show: false }
         },
         colors: barColors,
@@ -180,7 +180,7 @@
         chart: {
             type: 'bar',
             height: 300,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Inter, poppins',
             toolbar: { show: false }
         },
         colors: ['#12395C'], // Menggunakan primary color brand
@@ -241,7 +241,7 @@
         chart: {
             type: 'line',
             height: 350,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Inter, poppins',
             toolbar: { show: false }
         },
         colors: ['#D45B1F', '#3b82f6'],

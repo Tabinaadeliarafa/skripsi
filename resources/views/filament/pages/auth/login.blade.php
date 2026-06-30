@@ -1,4 +1,8 @@
 <x-filament-panels::page.simple>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         .fi-simple-layout {
             background: #F2EFEB !important;
@@ -21,19 +25,20 @@
             --tw-ring-color: transparent !important;
         }
 
+        .fi-simple-header,
+        .fi-simple-header-heading {
+            display: none !important;
+        }
+
+        .sig-admin-login,
+        .sig-admin-login * {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
         .sig-admin-login {
             min-height: 100vh;
             background: #F2EFEB;
             color: #12395C;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
-
-        .fi-simple-header {
-            display: none !important;
-        }
-
-        .fi-simple-header-heading {
-            display: none !important;
         }
 
         .sig-admin-login__topbar {
@@ -47,42 +52,44 @@
             width: 100%;
         }
 
-        .sig-admin-login__topbar-actions {
+        .sig-admin-login__brand {
             display: flex;
             align-items: center;
             gap: 12px;
+            font-weight: 800;
         }
 
-        .sig-admin-login__back-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            min-height: 46px;
-            margin-top: 14px;
-            border-radius: 999px;
-            background: transparent;
-            color: #12395C !important;
-            border: 1px solid rgba(18, 57, 92, 0.18);
+        .sig-admin-login__brand-title {
+            display: block;
+            color: #12395C;
             font-size: 14px;
-            font-weight: 700;
-            text-decoration: none !important;
-            transition: 0.2s ease;
+            line-height: 1;
+            font-weight: 800;
         }
 
-        .sig-admin-login__back-btn:hover {
-            background: rgba(18, 57, 92, 0.06);
-            transform: translateY(-1px);
+        .sig-admin-login__brand-subtitle {
+            display: block;
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            color: #64748b;
+            text-transform: uppercase;
         }
 
         .sig-admin-login__page-label {
+            position: absolute;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
             color: #12395C;
             font-size: 14px;
             font-weight: 700;
+            text-align: right;
         }
 
         .sig-admin-login__content {
-            min-height: calc(100vh - 64px);
+            min-height: calc(100vh - 72px);
             display: grid;
             grid-template-columns: 1fr 1fr;
         }
@@ -90,81 +97,104 @@
         .sig-admin-login__info {
             display: flex;
             align-items: center;
-            padding: 56px clamp(32px, 6vw, 96px);
+            padding: 64px clamp(32px, 6vw, 96px);
             background:
-                linear-gradient(135deg, rgba(18, 57, 92, 0.94), rgba(18, 57, 92, 0.78)),
-                radial-gradient(circle at top left, rgba(212, 91, 31, 0.36), transparent 34%),
-                #12395C;
+                radial-gradient(circle at top left, rgba(212, 91, 31, 0.34), transparent 34%),
+                linear-gradient(135deg, #12395C 0%, #16466f 55%, #12395C 100%);
             color: #ffffff;
         }
 
         .sig-admin-login__info-inner {
-            max-width: 520px;
+            width: 100%;
+            max-width: 560px;
         }
 
         .sig-admin-login__eyebrow {
             display: inline-flex;
-            padding: 8px 14px;
+            padding: 9px 16px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.12);
             border: 1px solid rgba(255, 255, 255, 0.18);
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
         .sig-admin-login__info h1 {
             margin-top: 28px;
-            font-size: clamp(34px, 4vw, 56px);
-            line-height: 1.05;
-            font-weight: 850;
-            letter-spacing: -0.055em;
+            font-size: clamp(36px, 4vw, 56px);
+            line-height: 1.08;
+            font-weight: 800;
+            letter-spacing: -0.045em;
         }
 
         .sig-admin-login__info p {
             margin-top: 18px;
-            max-width: 460px;
-            color: rgba(255, 255, 255, 0.78);
+            max-width: 480px;
+            color: rgba(255, 255, 255, 0.82);
             font-size: 16px;
-            line-height: 1.7;
+            line-height: 1.75;
         }
 
         .sig-admin-login__features {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-            margin-top: 34px;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-top: 36px;
+            max-width: 560px;
         }
 
         .sig-admin-login__feature {
-            min-height: 90px;
-            padding: 16px;
-            border-radius: 22px;
-            background: rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 18px 20px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.13);
             border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(12px);
         }
 
-        .sig-admin-login__feature strong {
-            display: block;
-            font-size: 22px;
-            line-height: 1;
+        .sig-admin-login__feature-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 18px;
+            background: #D45B1F;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 14px 28px rgba(212, 91, 31, 0.24);
+        }
+
+        .sig-admin-login__feature h3 {
+            margin: 0 0 5px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.3;
         }
 
         .sig-admin-login__feature span {
             display: block;
-            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.76);
             font-size: 12px;
-            line-height: 1.35;
-            color: rgba(255, 255, 255, 0.72);
+            line-height: 1.6;
         }
 
         .sig-admin-login__form-wrap {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 56px 32px;
-            background: #FFFEFC;
+            padding: 64px 32px;
+            background:
+                radial-gradient(circle at bottom right, rgba(18, 57, 92, 0.06), transparent 34%),
+                #FFFEFC;
         }
 
         .sig-admin-login__form-area {
@@ -173,9 +203,9 @@
         }
 
         .sig-admin-login__form-area h2 {
-            font-size: 32px;
+            font-size: 34px;
             line-height: 1.15;
-            font-weight: 850;
+            font-weight: 800;
             letter-spacing: -0.04em;
             color: #12395C;
         }
@@ -184,13 +214,13 @@
             margin-top: 10px;
             color: #64748b;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
         .sig-admin-login__card {
             margin-top: 28px;
             padding: 28px;
-            border-radius: 28px;
+            border-radius: 30px;
             background: #F2EFEB;
             border: 1px solid rgba(18, 57, 92, 0.08);
             box-shadow: 0 24px 60px rgba(18, 57, 92, 0.10);
@@ -216,23 +246,26 @@
             box-shadow: 0 16px 30px rgba(212, 91, 31, 0.24) !important;
         }
 
-        .sig-admin-login__brand {
-            display: flex;
+        .sig-admin-login__back-btn {
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            font-weight: 800;
-        }
-
-        .sig-admin-login__page-label {
-            position: absolute;
-            right: 32px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #12395C;
+            justify-content: center;
+            width: 100%;
+            min-height: 46px;
+            margin-top: 14px;
+            border-radius: 999px;
+            background: transparent;
+            color: #12395C !important;
+            border: 1px solid rgba(18, 57, 92, 0.18);
             font-size: 14px;
             font-weight: 700;
-            text-align: right;
+            text-decoration: none !important;
+            transition: 0.2s ease;
+        }
 
+        .sig-admin-login__back-btn:hover {
+            background: rgba(18, 57, 92, 0.06);
+            transform: translateY(-1px);
         }
 
         @media (max-width: 900px) {
@@ -240,16 +273,107 @@
                 grid-template-columns: 1fr;
             }
 
+            .sig-admin-login__topbar {
+                height: 72px;
+                padding: 0 24px;
+            }
+
+            .sig-admin-login__page-label {
+                right: 24px;
+                font-size: 13px;
+            }
+
             .sig-admin-login__info {
-                padding: 40px 24px;
+                align-items: flex-start;
+                padding: 40px 24px 36px;
+            }
+
+            .sig-admin-login__info h1 {
+                margin-top: 24px;
+                font-size: 30px;
+                line-height: 1.14;
+                letter-spacing: -0.04em;
+            }
+
+            .sig-admin-login__info p {
+                font-size: 13px;
+                line-height: 1.75;
+                max-width: 520px;
             }
 
             .sig-admin-login__features {
-                grid-template-columns: 1fr;
+                margin-top: 28px;
+                gap: 14px;
+            }
+
+            .sig-admin-login__feature {
+                padding: 16px;
+                border-radius: 20px;
+            }
+
+            .sig-admin-login__feature-number {
+                width: 42px;
+                height: 42px;
+                border-radius: 15px;
+                font-size: 16px;
+            }
+
+            .sig-admin-login__feature h3 {
+                font-size: 13px;
+            }
+
+            .sig-admin-login__feature span {
+                font-size: 11px;
             }
 
             .sig-admin-login__form-wrap {
                 padding: 40px 20px 56px;
+            }
+
+            .sig-admin-login__form-area {
+                max-width: 430px;
+            }
+
+            .sig-admin-login__form-area h2 {
+                font-size: 30px;
+                text-align: center;
+            }
+
+            .sig-admin-login__form-area > p {
+                text-align: center;
+                font-size: 13px;
+            }
+
+            .sig-admin-login__card {
+                padding: 24px;
+                border-radius: 26px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sig-admin-login__topbar {
+                padding: 0 18px;
+            }
+
+            .sig-admin-login__brand-subtitle {
+                font-size: 9px;
+            }
+
+            .sig-admin-login__page-label {
+                right: 18px;
+                font-size: 12px;
+            }
+
+            .sig-admin-login__info {
+                padding: 34px 20px;
+            }
+
+            .sig-admin-login__info h1 {
+                font-size: 27px;
+            }
+
+            .sig-admin-login__form-wrap {
+                padding: 34px 16px 48px;
             }
         }
     </style>
@@ -258,14 +382,15 @@
         <header class="sig-admin-login__topbar">
             <div class="sig-admin-login__brand">
                 <div>
-                    <span>SIG KAB. BEKASI</span>
-                    <span style="display:block;font-size:10px;font-weight:600;letter-spacing:.08em;color:#64748b;text-transform:uppercase;">
+                    <span class="sig-admin-login__brand-title">SIG KAB. BEKASI</span>
+                    <span class="sig-admin-login__brand-subtitle">
                         Bencana Kabupaten Bekasi
                     </span>
                 </div>
-                <div class="sig-admin-login__page-label">
-                    Page Admin
-                </div>
+            </div>
+
+            <div class="sig-admin-login__page-label">
+                Page Admin
             </div>
         </header>
 
@@ -283,16 +408,27 @@
 
                     <div class="sig-admin-login__features">
                         <div class="sig-admin-login__feature">
-                            <strong>01</strong>
-                            <span>Kelola data kejadian bencana</span>
+                            <div class="sig-admin-login__feature-number">01</div>
+                            <div>
+                                <h3>Kelola Data Bencana</h3>
+                                <span>Mengelola data kejadian bencana yang tersimpan di dalam sistem.</span>
+                            </div>
                         </div>
+
                         <div class="sig-admin-login__feature">
-                            <strong>02</strong>
-                            <span>Perbarui data wilayah dan referensi</span>
+                            <div class="sig-admin-login__feature-number">02</div>
+                            <div>
+                                <h3>Perbarui Data Referensi</h3>
+                                <span>Memperbarui data kecamatan, desa, dan jenis bencana.</span>
+                            </div>
                         </div>
+
                         <div class="sig-admin-login__feature">
-                            <strong>03</strong>
-                            <span>Pantau statistik melalui dashboard</span>
+                            <div class="sig-admin-login__feature-number">03</div>
+                            <div>
+                                <h3>Pantau Statistik Sistem</h3>
+                                <span>Melihat ringkasan data melalui dashboard admin.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
