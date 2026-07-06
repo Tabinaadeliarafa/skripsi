@@ -35,11 +35,28 @@ class LaporanBencanaResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('latitude')
+                    ->label('Latitude')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->readOnly()
+                    ->extraInputAttributes([
+                        'id' => 'latitude-input',
+                    ]),
+
                 Forms\Components\TextInput::make('longitude')
+                    ->label('Longitude')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->readOnly()
+                    ->extraInputAttributes([
+                        'id' => 'longitude-input',
+                    ]),
+
+                Forms\Components\ViewField::make('map_picker')
+                    ->label('Pilih Lokasi pada Peta')
+                    ->view('filament.forms.location-picker')
+                    ->dehydrated(false)
+                    ->columnSpanFull(),
                 Forms\Components\DatePicker::make('date')
                     ->required(),
                 Forms\Components\Select::make('status')

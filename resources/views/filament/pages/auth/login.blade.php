@@ -376,6 +376,73 @@
                 padding: 34px 16px 48px;
             }
         }
+
+        /* =========================
+        FIX LOGIN DARK MODE
+        Login tetap pakai tema terang agar tulisan terbaca
+        ========================= */
+
+        .dark .sig-admin-login {
+            background: #F2EFEB !important;
+            color: #12395C !important;
+        }
+
+        .dark .sig-admin-login__form-wrap {
+            background:
+                radial-gradient(circle at bottom right, rgba(18, 57, 92, 0.06), transparent 34%),
+                #FFFEFC !important;
+        }
+
+        .dark .sig-admin-login__form-area h2 {
+            color: #12395C !important;
+        }
+
+        .dark .sig-admin-login__form-area > p {
+            color: #64748b !important;
+        }
+
+        .dark .sig-admin-login__card {
+            background: #F2EFEB !important;
+            border-color: rgba(18, 57, 92, 0.08) !important;
+        }
+
+        /* label login tetap gelap walau dark mode */
+        .dark .sig-admin-login__card label,
+        .dark .sig-admin-login__card .fi-fo-field-wrp-label,
+        .dark .sig-admin-login__card .fi-fo-field-wrp-label span,
+        .dark .sig-admin-login__card .fi-fo-field-wrp-label label {
+            color: #12395C !important;
+            background: transparent !important;
+        }
+
+        /* input login tetap putih */
+        .dark .sig-admin-login__card .fi-input-wrp {
+            background: #ffffff !important;
+            border: 1px solid rgba(18, 57, 92, 0.10) !important;
+        }
+
+        .dark .sig-admin-login__card input {
+            color: #12395C !important;
+            background: #ffffff !important;
+        }
+
+        /* remember me tetap kelihatan */
+        .dark .sig-admin-login__card .fi-checkbox-input {
+            background-color: #ffffff !important;
+            border-color: rgba(18, 57, 92, 0.25) !important;
+        }
+
+        .dark .sig-admin-login__card .fi-checkbox-list-option-label,
+        .dark .sig-admin-login__card .fi-checkbox-label,
+        .dark .sig-admin-login__card span {
+            color: #12395C !important;
+        }
+
+        /* tombol kembali tetap terbaca */
+        .dark .sig-admin-login__back-btn {
+            color: #12395C !important;
+            border-color: rgba(18, 57, 92, 0.18) !important;
+        }
     </style>
 
     <div class="sig-admin-login">
