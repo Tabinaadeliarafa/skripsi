@@ -29,7 +29,6 @@
 .fi-section,
 .fi-ta,
 .fi-wi-stats-overview-stat,
-.fi-fo-field-wrp,
 .fi-modal-window {
     background: #FFFEFC !important;
 }
@@ -64,7 +63,6 @@
 .dark .fi-section,
 .dark .fi-ta,
 .dark .fi-wi-stats-overview-stat,
-.dark .fi-fo-field-wrp,
 .dark .fi-modal-window {
     background: #12395C !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -75,4 +73,43 @@
 .dark .fi-ta,
 .dark .fi-wi-stats-overview-stat {
     color: #ffffff !important;
+}
+
+/* FIX: label dan wrapper form jangan punya background kotak */
+.fi-fo-field-wrp,
+.fi-fo-field-wrp > div,
+.fi-fo-field-wrp-label,
+.fi-fo-field-wrp-label label,
+.fi-fo-field-wrp-label span,
+.fi-fo-field-wrp-label-ctn {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Input tetap berbentuk field normal */
+.fi-input-wrp,
+.fi-select-input,
+.fi-textarea {
+    background: #ffffff !important;
+}
+
+/* Dark mode: label tetap transparan */
+.dark .fi-fo-field-wrp,
+.dark .fi-fo-field-wrp > div,
+.dark .fi-fo-field-wrp-label,
+.dark .fi-fo-field-wrp-label label,
+.dark .fi-fo-field-wrp-label span,
+.dark .fi-fo-field-wrp-label-ctn {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Dark mode: input tetap kebaca */
+.dark .fi-input-wrp,
+.dark .fi-select-input,
+.dark .fi-textarea {
+    background: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }

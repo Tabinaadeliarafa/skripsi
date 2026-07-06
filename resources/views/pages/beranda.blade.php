@@ -148,7 +148,7 @@
         <div class="lg:col-span-3">
             <div class="bg-brandSurface p-6 rounded-3xl shadow-sm border border-gray-100">
                 <h3 class="text-sm font-bold text-primary mb-4">Tahun Data: <span id="yearDisplay">Semua Tahun</span></h3>
-                <input type="range" min="2014" max="{{ date('Y') }}" value="2014" class="w-full" id="yearSlider">
+                <input type="range" min="2020" max="{{ date('Y') }}" value="2020" class="w-full" id="yearSlider">
                 <p class="text-xs text-gray-400 mt-3 text-center">*Tarik ke paling kiri untuk menampilkan Semua Tahun.</p>
             </div>
         </div>
@@ -355,7 +355,7 @@
 
     slider.addEventListener('input', function(e) {
         var val = e.target.value;
-        if (val <= 2014) {
+        if (val <= 2019) {
             display.innerText = "Semua Tahun";
             var highest = calculateStats(0); // 0 untuk semua tahun
         } else {
@@ -385,7 +385,7 @@
         var filteredLaporans = laporans.filter(function(l) {
             var matchKecamatan = l.desa
             var matchYear = true;
-            if (currentYear > 2014) {
+            if (currentYear > 2019) {
                 if (l.date && !l.date.startsWith(currentYear.toString())) {
                     matchYear = false;
                 }
