@@ -383,7 +383,7 @@ class DatabaseSeeder extends Seeder
 
     private function importDataBencana2023Dan2024(): void
     {
-        $csvTambahan = database_path('data/2023-2024(update).csv');
+        $csvTambahan = public_path('data/2023-2024(update).csv');
 
         if (! file_exists($csvTambahan)) {
             echo "File 2023-2024(update).csv tidak ditemukan di public/data/\n";
