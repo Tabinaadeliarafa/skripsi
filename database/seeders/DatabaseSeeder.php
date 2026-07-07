@@ -15,6 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (env('IMPORT_2023_2024_ONLY', false)) {
+            $this->importDataBencana2023Dan2024();
+            return;
+        }
+
         User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
@@ -373,6 +378,172 @@ class DatabaseSeeder extends Seeder
             }
         } else {
             echo "File 2023-2024(update).csv tidak ditemukan di database/data/\n";
+        }
+    }
+
+    private function importDataBencana2023Dan2024(): void
+    {
+        $csvTambahan = database_path('data/2023-2024(update).csv');
+
+        if (! file_exists($csvTambahan)) {
+            echo "File 2023-2024(update).csv tidak ditemukan di database/data/\n";
+            return;
+        }
+
+        // Hapus dulu data 2023 dan 2024 agar tidak dobel saat seed ulang
+        \App\Models\LaporanBencana::whereYear('date', 2023)
+            ->orWhereYear('date', 2024)
+            ->delete();
+
+        $file = fopen($csvTambahan, 'r');
+
+        $header = fgetcsv($file, 0, ';');
+
+        if (isset($header[0])) {
+            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]);
+        }
+
+        $importedTambahan = 0;
+        $skippedTambahan = [];
+
+        while (($row = fgetcsv($file, 0, ';')) !== false) {
+            if (count($row) !== count($header)) {
+                $skippedTambahan[] = [
+                    'reason' => 'Jumlah kolom tidak sesuai',
+                    'row' => $row,
+                ];
+                continue;
+            }
+
+            $data = array_combine($header, $row);
+
+            $jenisNameLower = strtolower(trim($data['Jenis Kejadian'] ?? ''));
+            $tahun = trim($data['Tahun Kejadian'] ?? '');
+            $kecamatanName = strtoupper(trim($data['Kecamatan'] ?? ''));
+            $desaName = strtoupper(trim($data['Desa'] ?? ''));
+
+            $aliasKecamatan = [
+                'MUARAGEMBONG' => 'MUARA GEMBONG',
+            ];
+
+            if (isset($aliasKecamatan[$kecamatanName])) {
+                $kecamatanName = $aliasKecamatan[$kecamatanName];
+            }
+
+            if (! in_array($tahun, ['2023', '2024'])) {
+                continue;
+            }
+
+            if ($jenisNameLower === '' || $tahun === '' || $kecamatanName === '' || $desaName === '') {
+                $skippedTambahan[] = [
+                    'reason' => 'Jenis/Tahun/Kecamatan/Desa kosong',
+                    'data' => $data,
+                ];
+                continue;
+            }
+
+            if (str_contains($jenisNameLower, 'banjir') || str_contains($jenisNameLower, 'rob')) {
+                $jenisName = 'Banjir';
+            } elseif (str_contains($jenisNameLower, 'kering')) {
+                $jenisName = 'Kekeringan';
+            } elseif (
+                str_contains($jenisNameLower, 'angin') ||
+                str_contains($jenisNameLower, 'puting') ||
+                str_contains($jenisNameLower, 'cuaca') ||
+                str_contains($jenisNameLower, 'pohon') ||
+                str_contains($jenisNameLower, 'pasang') ||
+                str_contains($jenisNameLower, 'ekstrim') ||
+                str_contains($jenisNameLower, 'exstrim') ||
+                str_contains($jenisNameLower, 'ekstrem')
+            ) {
+                $jenisName = 'Cuaca Ekstrem';
+            } else {
+                $skippedTambahan[] = [
+                    'reason' => 'Jenis bencana tidak digunakan pada sistem',
+                    'jenis' => $jenisNameLower,
+                    'data' => $data,
+                ];
+                continue;
+            }
+
+            $jenis = \App\Models\JenisBencana::firstOrCreate([
+                'name' => $jenisName,
+            ]);
+
+            $kecamatan = \App\Models\Kecamatan::whereRaw('UPPER(TRIM(name)) = ?', [
+                $kecamatanName,
+            ])->first();
+
+            if (! $kecamatan) {
+                $kecamatan = \App\Models\Kecamatan::where('name', 'ILIKE', '%' . $kecamatanName . '%')->first();
+            }
+
+            if (! $kecamatan) {
+                $skippedTambahan[] = [
+                    'reason' => 'Kecamatan tidak ditemukan',
+                    'kecamatan' => $kecamatanName,
+                    'data' => $data,
+                ];
+                continue;
+            }
+
+            $desa = \App\Models\Desa::where('kecamatan_id', $kecamatan->id)
+                ->whereRaw('UPPER(TRIM(name)) = ?', [$desaName])
+                ->first();
+
+            if (! $desa) {
+                $desa = \App\Models\Desa::where('kecamatan_id', $kecamatan->id)
+                    ->where('name', 'ILIKE', '%' . $desaName . '%')
+                    ->first();
+            }
+
+            if (! $desa) {
+                $desa = \App\Models\Desa::whereRaw('UPPER(TRIM(name)) = ?', [$desaName])->first();
+            }
+
+            if (! $desa) {
+                $desa = \App\Models\Desa::create([
+                    'kecamatan_id' => $kecamatan->id,
+                    'name' => ucwords(strtolower($desaName)),
+                    'geojson' => null,
+                ]);
+            }
+
+            if (empty($desa->kecamatan_id)) {
+                $desa->update([
+                    'kecamatan_id' => $kecamatan->id,
+                ]);
+            }
+
+            $month = str_pad(mt_rand(1, 12), 2, '0', STR_PAD_LEFT);
+            $day = str_pad(mt_rand(1, 28), 2, '0', STR_PAD_LEFT);
+            $date = $tahun . '-' . $month . '-' . $day;
+
+            $lat = round(-6.23 + (mt_rand(-100, 100) / 1000), 6);
+            $lng = round(107.0 + (mt_rand(-100, 100) / 1000), 6);
+
+            \App\Models\LaporanBencana::create([
+                'desa_id' => $desa->id,
+                'jenis_bencana_id' => $jenis->id,
+                'title' => $jenisName . ' (' . $tahun . ')',
+                'description' => 'Laporan historis ' . $jenisName . ' tahun ' . $tahun,
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'date' => $date,
+                'status' => 'resolved',
+            ]);
+
+            $importedTambahan++;
+        }
+
+        fclose($file);
+
+        echo "Import tambahan 2023 dan 2024 selesai.\n";
+        echo "Total data masuk: {$importedTambahan}\n";
+        echo "Total data dilewati: " . count($skippedTambahan) . "\n";
+
+        if (count($skippedTambahan) > 0) {
+            dump($skippedTambahan);
         }
     }
 }
