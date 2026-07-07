@@ -95,12 +95,12 @@
     @endif
 </head>
 
-<body class="{{ $isEmbed ? 'bg-transparent text-gray-800 antialiased' : 'bg-brandBg text-gray-800 antialiased flex flex-col min-h-screen' }}">
+<body class="bg-brandBg text-gray-800 antialiased flex flex-col min-h-screen overflow-x-hidden">
 
     @if (! $isEmbed)
         <!-- Navigation -->
         <nav class="bg-brandBg sticky top-0 z-50 pt-4 pb-2">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
                 <div class="flex items-center h-16 bg-brandSurface rounded-full px-4 sm:px-6 shadow-sm border border-gray-100 gap-3">
                     
                     <!-- Logo Left -->
@@ -152,7 +152,7 @@
     @endif
 
     <!-- Main Content -->
-    <main class="{{ $isEmbed ? 'w-full p-0 m-0' : 'flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6' }}">
+    <main class="flex-1 w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6">
         @yield('content')
     </main>
 
@@ -354,7 +354,7 @@
     @if (! $isEmbed)
         <!-- Footer -->
         <footer class="bg-brandSurface border-t border-gray-200 mt-auto">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-gray-500">
+            <div class="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 text-center text-sm text-gray-500">
                 &copy; {{ date('Y') }} Sistem Informasi Geografis Bencana Kabupaten Bekasi. All rights reserved.
             </div>
         </footer>
