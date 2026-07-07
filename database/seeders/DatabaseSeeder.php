@@ -377,7 +377,7 @@ class DatabaseSeeder extends Seeder
                 dump($skippedTambahan);
             }
         } else {
-            echo "File 2023-2024(update).csv tidak ditemukan di database/data/\n";
+            echo "File 2023-2024(update).csv tidak ditemukan di public/data/\n";
         }
     }
 
@@ -386,7 +386,7 @@ class DatabaseSeeder extends Seeder
         $csvTambahan = database_path('data/2023-2024(update).csv');
 
         if (! file_exists($csvTambahan)) {
-            echo "File 2023-2024(update).csv tidak ditemukan di database/data/\n";
+            echo "File 2023-2024(update).csv tidak ditemukan di public/data/\n";
             return;
         }
 
