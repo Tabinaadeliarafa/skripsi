@@ -99,27 +99,27 @@
 
     @if (! $isEmbed)
         <!-- Navigation -->
-        <nav class="bg-brandBg sticky top-0 z-50 pt-4 pb-2">
+        <nav class="bg-brandBg sticky top-0 z-50 pt-5 pb-2">
             <div class="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-                <div class="flex items-center h-16 bg-brandSurface rounded-full px-4 sm:px-6 shadow-sm border border-gray-100 gap-3">
+                <div class="flex items-center h-16 bg-brandSurface rounded-full px-7 sm:px-8 shadow-sm border border-gray-100 gap-3">
                     
                     <!-- Logo Left -->
                     <a href="/" class="flex items-center gap-3 shrink-0">
-                        <div class="bg-primary text-white p-2 rounded-full">
-                            <i data-lucide="map" class="w-5 h-5"></i>
+                        <div class="bg-primary text-white p-2.5 rounded-full">
+                            <i data-lucide="map" class="w-6 h-6"></i>
                         </div>
                         <div class="hidden sm:flex flex-col">
                             <span class="font-bold text-sm tracking-tight text-primary leading-none">SIG KAB.BEKASI</span>
-                            <span class="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Bencana Kabupaten Bekasi</span>
+                            <span class="text-[11px] text-gray-500 uppercase tracking-wider font-medium">Bencana Kabupaten Bekasi</span>
                         </div>
                     </a>
                     
                     <!-- Nav Center Desktop -->
                     <div class="hidden md:flex items-center space-x-2 mx-auto">
-                        <a href="/" class="px-5 py-2 rounded-full text-sm font-medium transition-colors {{ request()->is('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Beranda</a>
-                        <a href="/peta" class="px-5 py-2 rounded-full text-sm font-medium transition-colors {{ request()->is('peta') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Peta</a>
-                        <a href="/visualisasi" class="px-5 py-2 rounded-full text-sm font-medium transition-colors {{ request()->is('visualisasi') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Visualisasi</a>
-                        <a href="/laporan" class="px-5 py-2 rounded-full text-sm font-medium transition-colors {{ request()->is('laporan') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Laporan</a>
+                        <a href="/" class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors {{ request()->is('/') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Beranda</a>
+                        <a href="/peta" class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors {{ request()->is('peta') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Peta</a>
+                        <a href="/visualisasi" class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors {{ request()->is('visualisasi') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Visualisasi</a>
+                        <a href="/laporan" class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors {{ request()->is('laporan') ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900' }}">Laporan</a>
                     </div>
 
                     <!-- Nav Center Mobile -->
@@ -132,7 +132,7 @@
                     
                     <!-- Login Right -->
                     <div class="flex items-center shrink-0">
-                        <a href="/admin" class="text-sm font-medium bg-secondary text-white p-2 sm:px-5 sm:py-2 rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
+                        <a href="/admin" class="text-[15px] font-semibold bg-secondary text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
                             <i data-lucide="log-in" class="w-4 h-4"></i>
                             <span class="hidden sm:inline">Login Admin</span>
                         </a>

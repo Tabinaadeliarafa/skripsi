@@ -6,9 +6,70 @@ use Illuminate\Http\Request;
 use App\Models\Kecamatan;
 use App\Models\LaporanBencana;
 use App\Models\JenisBencana;
+use App\Services\LstmPredictionService;
 
 class HomeController extends Controller
 {
+
+    /**
+     * Menentukan kategori risiko prediksi berdasarkan distribusi total kejadian
+     * tahunan historis. Batas rendah dan tinggi memakai persentil 33% dan 67%.
+     */
+    private function calculatePredictionRisk(array $historicalTotals, int $forecastTotal): array
+    {
+        $values = array_values(array_filter($historicalTotals, fn ($value) => is_numeric($value)));
+        sort($values, SORT_NUMERIC);
+
+        if (count($values) < 3) {
+            return [
+                'label' => 'Belum dapat diklasifikasikan',
+                'level' => 'unknown',
+                'color' => '#64748b',
+                'low_threshold' => null,
+                'high_threshold' => null,
+            ];
+        }
+
+        $percentile = function (array $sortedValues, float $p): float {
+            $position = (count($sortedValues) - 1) * $p;
+            $lower = (int) floor($position);
+            $upper = (int) ceil($position);
+
+            if ($lower === $upper) {
+                return (float) $sortedValues[$lower];
+            }
+
+            $weight = $position - $lower;
+            return ((float) $sortedValues[$lower] * (1 - $weight))
+                + ((float) $sortedValues[$upper] * $weight);
+        };
+
+        $lowThreshold = $percentile($values, 0.33);
+        $highThreshold = $percentile($values, 0.67);
+
+        if ($forecastTotal <= $lowThreshold) {
+            $label = 'Risiko Rendah';
+            $level = 'low';
+            $color = '#10b981';
+        } elseif ($forecastTotal <= $highThreshold) {
+            $label = 'Risiko Sedang';
+            $level = 'medium';
+            $color = '#eab308';
+        } else {
+            $label = 'Risiko Tinggi';
+            $level = 'high';
+            $color = '#ef4444';
+        }
+
+        return [
+            'label' => $label,
+            'level' => $level,
+            'color' => $color,
+            'low_threshold' => round($lowThreshold, 2),
+            'high_threshold' => round($highThreshold, 2),
+        ];
+    }
+
     private function applyFilters($query, Request $request)
     {
         if ($request->has('kecamatan_id') && $request->kecamatan_id != '') {
@@ -162,56 +223,61 @@ class HomeController extends Controller
         }
         arsort($chartWilayah);
 
-        // --- PREDIKSI MOVING AVERAGE ---
-        $chartPrediksi = [
-            'labels' => [],
-            'historis' => [],
-            'moving_average' => []
-        ];
+        // --- PREDIKSI LSTM ---
+        // Agregasi bulanan memberi LSTM lebih banyak titik latih daripada hanya 5 total tahunan.
+        $monthlySeries = [];
+        foreach ($data as $item) {
+            $period = date('Ym', strtotime($item->date));
+            $monthlySeries[$period] = ($monthlySeries[$period] ?? 0) + 1;
+        }
+
+        $lstmResult = app(LstmPredictionService::class)->forecast($monthlySeries);
 
         $totalPerYear = [];
-        foreach($data as $item) {
-            $year = date('Y', strtotime($item->date));
-            if(!isset($totalPerYear[$year])) {
-                $totalPerYear[$year] = 0;
-            }
-            $totalPerYear[$year]++;
+        foreach ($data as $item) {
+            $year = (int) date('Y', strtotime($item->date));
+            $totalPerYear[$year] = ($totalPerYear[$year] ?? 0) + 1;
         }
-        
-        if (count($totalPerYear) > 0) {
-            $actualMaxYear = max(array_keys($totalPerYear));
-            $minYear = min(array_keys($totalPerYear));
-            $targetYear = 2026;
-            
-            for ($y = $minYear; $y <= $actualMaxYear; $y++) {
-                if (!isset($totalPerYear[$y])) {
-                    $totalPerYear[$y] = 0; 
-                }
-            }
-            ksort($totalPerYear);
+        ksort($totalPerYear);
 
-            $period = 3; 
-            $series = [];
+        // Tahun yang belum lengkap tidak ditampilkan sebagai data historis ketika
+        // tahun tersebut merupakan tahun yang sedang diproyeksikan oleh LSTM.
+        if (
+            $lstmResult['status'] === 'ok'
+            && isset($lstmResult['last_historical_year'])
+        ) {
+            $lastHistoricalYear = (int) $lstmResult['last_historical_year'];
+            $totalPerYear = array_filter(
+                $totalPerYear,
+                fn ($value, $year) => (int) $year <= $lastHistoricalYear,
+                ARRAY_FILTER_USE_BOTH
+            );
+        }
 
-            $maxIterYear = max($actualMaxYear, $targetYear);
-            
-            for ($y = $minYear; $y <= $maxIterYear; $y++) {
-                $chartPrediksi['labels'][] = $y;
-                
-                if ($y <= $actualMaxYear) {
-                    $val = $totalPerYear[$y];
-                    $chartPrediksi['historis'][] = $val;
-                    $series[] = $val;
-                } else {
-                    $chartPrediksi['historis'][] = null;
-                    $lastPeriod = array_slice($series, -$period);
-                    $forecast = count($lastPeriod) > 0 ? round(array_sum($lastPeriod) / count($lastPeriod), 2) : 0;
-                    $series[] = $forecast;
-                }
-                
-                $lastPeriodForMA = array_slice($series, -$period);
-                $ma = count($lastPeriodForMA) > 0 ? round(array_sum($lastPeriodForMA) / count($lastPeriodForMA), 2) : 0;
-                $chartPrediksi['moving_average'][] = $ma;
+        $chartPrediksi = [
+            'labels' => array_map('strval', array_keys($totalPerYear)),
+            'historis' => array_values($totalPerYear),
+            'lstm' => array_fill(0, count($totalPerYear), null),
+            'status' => $lstmResult['status'],
+            'message' => $lstmResult['message'] ?? null,
+            'method' => $lstmResult['method'] ?? 'LSTM',
+            'rmse' => $lstmResult['rmse'] ?? null,
+            'risk' => null,
+        ];
+
+        if ($lstmResult['status'] === 'ok') {
+            $forecastTotal = (int) $lstmResult['forecast_total'];
+            $chartPrediksi['risk'] = $this->calculatePredictionRisk(
+                array_values($totalPerYear),
+                $forecastTotal
+            );
+            $chartPrediksi['labels'][] = (string) $lstmResult['forecast_year'];
+            $chartPrediksi['historis'][] = null;
+            $chartPrediksi['lstm'][] = $forecastTotal;
+
+            // Sambungkan garis prediksi dari nilai aktual terakhir agar grafik mudah dibaca.
+            if (count($chartPrediksi['lstm']) >= 2 && $totalPerYear !== []) {
+                $chartPrediksi['lstm'][count($chartPrediksi['lstm']) - 2] = end($totalPerYear);
             }
         }
 

@@ -57,9 +57,25 @@
     <!-- Line Chart Prediksi -->
     <div class="bg-brandSurface p-6 rounded-xl border border-gray-200 shadow-sm col-span-1 lg:col-span-3 mt-2">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-base font-bold text-gray-800">Prediksi Trend Kejadian (Moving Average)</h3>
-            <span class="text-xs font-medium bg-secondary/10 text-secondary px-2.5 py-1 rounded-md">Proyeksi s/d 2026</span>
+            <h3 class="text-base font-bold text-gray-800">Prediksi Tren Kejadian (LSTM)</h3>
+            <span class="text-xs font-medium bg-secondary/10 text-secondary px-2.5 py-1 rounded-md">{{ !empty($chartPrediksi['labels']) ? 'Proyeksi Tahun ' . last($chartPrediksi['labels']) : 'LSTM' }}</span>
         </div>
+        @if(($chartPrediksi['status'] ?? 'unavailable') !== 'ok')
+            <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {{ $chartPrediksi['message'] ?? 'Prediksi LSTM belum tersedia.' }}
+            </div>
+        @elseif(isset($chartPrediksi['rmse']))
+            <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>Metode: {{ $chartPrediksi['method'] }} · RMSE data latih: {{ $chartPrediksi['rmse'] }}</span>
+                @if(!empty($chartPrediksi['risk']))
+                    <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold"
+                          style="color: {{ $chartPrediksi['risk']['color'] }}; border-color: {{ $chartPrediksi['risk']['color'] }}33; background-color: {{ $chartPrediksi['risk']['color'] }}14;">
+                        <span class="h-2 w-2 rounded-full" style="background-color: {{ $chartPrediksi['risk']['color'] }};"></span>
+                        {{ $chartPrediksi['risk']['label'] }}
+                    </span>
+                @endif
+            </div>
+        @endif
         <div id="prediksiChart" class="w-full"></div>
     </div>
 </div>
@@ -224,7 +240,7 @@
     var chartWilayah = new ApexCharts(document.querySelector("#wilayahChart"), optionsWilayah);
     chartWilayah.render();
 
-    // Data untuk Chart Prediksi Moving Average (Line)
+    // Data untuk Chart Prediksi LSTM (Line)
     const chartPrediksi = @json($chartPrediksi);
     
     var optionsPrediksi = {
@@ -234,8 +250,8 @@
                 data: chartPrediksi.historis
             },
             {
-                name: 'Moving Average (Prediksi)',
-                data: chartPrediksi.moving_average
+                name: 'LSTM (Prediksi)',
+                data: chartPrediksi.lstm
             }
         ],
         chart: {
@@ -252,6 +268,16 @@
         },
         markers: {
             size: 5,
+            discrete: chartPrediksi.risk ? [
+                {
+                    seriesIndex: 1,
+                    dataPointIndex: chartPrediksi.labels.length - 1,
+                    fillColor: chartPrediksi.risk.color,
+                    strokeColor: '#ffffff',
+                    size: 9,
+                    shape: 'circle'
+                }
+            ] : []
         },
         xaxis: {
             categories: chartPrediksi.labels,
@@ -262,9 +288,17 @@
         legend: { position: 'top' },
         tooltip: {
             y: {
-                formatter: function (val) {
-                    if(val === null) return "Tidak ada data historis";
-                    return val + " Kejadian"
+                formatter: function (val, opts) {
+                    if (val === null) return "Tidak ada data historis";
+
+                    const isForecastPoint = opts.seriesIndex === 1
+                        && opts.dataPointIndex === chartPrediksi.labels.length - 1;
+
+                    if (isForecastPoint && chartPrediksi.risk) {
+                        return val + " Kejadian · " + chartPrediksi.risk.label;
+                    }
+
+                    return val + " Kejadian";
                 }
             }
         }
