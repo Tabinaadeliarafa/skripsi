@@ -17,10 +17,11 @@ RUN apt-get update \
         unzip \
         libpq-dev \
         libicu-dev \
+        libzip-dev \
         python3 \
         python3-venv \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install intl pdo_pgsql \
+    && docker-php-ext-install intl pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
