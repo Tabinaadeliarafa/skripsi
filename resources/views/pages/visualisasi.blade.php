@@ -1,5 +1,14 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        #predictionRiskMap { height: 520px; width: 100%; z-index: 10; border-radius: 0.75rem; }
+        .prediction-map-legend { background: rgba(255,255,255,.96); padding: 10px 12px; border-radius: 10px; box-shadow: 0 1px 8px rgba(15,23,42,.18); line-height: 1.5; }
+        .prediction-map-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 7px; border-radius: 3px; vertical-align: -1px; }
+    </style>
+@endpush
+
 @section('content')
 <div class="mb-6 bg-brandSurface p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div class="flex items-center gap-2">
@@ -78,11 +87,27 @@
         @endif
         <div id="prediksiChart" class="w-full"></div>
     </div>
+
+    <!-- Peta Risiko Prediksi LSTM -->
+    <div class="bg-brandSurface p-6 rounded-xl border border-gray-200 shadow-sm col-span-1 lg:col-span-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div>
+                <h3 class="text-base font-bold text-gray-800">Peta Risiko Prediksi LSTM per Kecamatan</h3>
+                <p class="text-xs text-gray-500 mt-1">Klik wilayah untuk melihat tahun, jumlah prediksi kejadian, kategori risiko, dan RMSE.</p>
+            </div>
+            <span class="text-xs font-medium bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md self-start">Prediksi tahun berikutnya</span>
+        </div>
+        <div id="predictionRiskMap"></div>
+        <p class="mt-3 text-xs leading-5 text-gray-500">
+            Warna dihitung dari perbandingan hasil prediksi seluruh kecamatan: hijau (33% terbawah), kuning (kelompok tengah), dan merah (33% teratas). Abu-abu berarti data historis belum cukup untuk diprediksi.
+        </p>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
     // Data untuk Chart Jenis Bencana (Pie)
     const chartJenisData = @json($chartJenis);
@@ -258,7 +283,20 @@
             type: 'line',
             height: 350,
             fontFamily: 'Inter, poppins',
-            toolbar: { show: false }
+            toolbar: { show: false },
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 1800,
+                animateGradually: {
+                    enabled: true,
+                    delay: 180
+                },
+                dynamicAnimation: {
+                    enabled: true,
+                    speed: 700
+                }
+            }
         },
         colors: ['#D45B1F', '#3b82f6'],
         stroke: {
@@ -282,6 +320,26 @@
         xaxis: {
             categories: chartPrediksi.labels,
         },
+        annotations: chartPrediksi.status === 'ok' ? {
+            xaxis: [
+                {
+                    x: chartPrediksi.labels[chartPrediksi.labels.length - 1],
+                    borderColor: chartPrediksi.risk?.color || '#3b82f6',
+                    strokeDashArray: 4,
+                    label: {
+                        text: 'Tahun Prediksi',
+                        orientation: 'horizontal',
+                        offsetY: -5,
+                        style: {
+                            background: chartPrediksi.risk?.color || '#3b82f6',
+                            color: '#ffffff',
+                            fontSize: '11px',
+                            fontWeight: 600
+                        }
+                    }
+                }
+            ]
+        } : {},
         yaxis: {
             title: { text: 'Jumlah Kejadian' }
         },
@@ -306,5 +364,76 @@
 
     var chartPrediksiChart = new ApexCharts(document.querySelector("#prediksiChart"), optionsPrediksi);
     chartPrediksiChart.render();
+
+    // Peta choropleth risiko hasil prediksi LSTM per kecamatan.
+    const predictionMapData = @json($predictionMap);
+    const normalizeRegionName = value => String(value || '')
+        .toLocaleLowerCase('id-ID')
+        .replace(/^kecamatan\s+/, '')
+        .replace(/[^a-z0-9]/g, '');
+    const predictionByRegion = Object.values(predictionMapData).reduce((result, item) => {
+        result[normalizeRegionName(item.name)] = item;
+        return result;
+    }, {});
+
+    const predictionRiskMap = L.map('predictionRiskMap', {
+        scrollWheelZoom: false,
+        preferCanvas: true
+    }).setView([-6.238270, 106.975571], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(predictionRiskMap);
+
+    fetch('{{ asset('geo/kecamatan.geojson') }}')
+        .then(response => {
+            if (!response.ok) throw new Error('GeoJSON kecamatan tidak dapat dimuat.');
+            return response.json();
+        })
+        .then(geojson => {
+            const layer = L.geoJSON(geojson, {
+                style: feature => {
+                    const prediction = predictionByRegion[normalizeRegionName(feature.properties.NAME_3)];
+                    return {
+                        color: '#ffffff',
+                        weight: 1.5,
+                        fillColor: prediction?.risk?.color || '#cbd5e1',
+                        fillOpacity: 0.72
+                    };
+                },
+                onEachFeature: (feature, regionLayer) => {
+                    const regionName = feature.properties.NAME_3 || 'Wilayah tidak diketahui';
+                    const prediction = predictionByRegion[normalizeRegionName(regionName)];
+                    const popup = prediction?.status === 'ok'
+                        ? `<div style="min-width:190px"><strong>${regionName}</strong><br>Tahun prediksi: ${prediction.forecast_year}<br>Prediksi: <strong>${prediction.forecast_total} kejadian</strong><br>Risiko: <strong style="color:${prediction.risk.color}">${prediction.risk.label}</strong><br>RMSE: ${prediction.rmse ?? '-'}</div>`
+                        : `<div style="min-width:190px"><strong>${regionName}</strong><br><span style="color:#64748b">Prediksi belum tersedia.</span><br><small>${prediction?.message || 'Data historis belum cukup.'}</small></div>`;
+
+                    regionLayer.bindPopup(popup);
+                    regionLayer.on({
+                        mouseover: event => event.target.setStyle({ weight: 3, fillOpacity: 0.9 }),
+                        mouseout: event => layer.resetStyle(event.target)
+                    });
+                }
+            }).addTo(predictionRiskMap);
+
+            if (layer.getBounds().isValid()) predictionRiskMap.fitBounds(layer.getBounds(), { padding: [12, 12] });
+        })
+        .catch(error => {
+            console.error(error);
+            document.getElementById('predictionRiskMap').innerHTML = '<div class="h-full flex items-center justify-center text-sm text-red-600 bg-red-50 rounded-xl">Peta batas kecamatan gagal dimuat.</div>';
+        });
+
+    const predictionLegend = L.control({ position: 'bottomright' });
+    predictionLegend.onAdd = function () {
+        const div = L.DomUtil.create('div', 'prediction-map-legend');
+        div.innerHTML = '<strong>Risiko Prediksi</strong><br>'
+            + '<i style="background:#10b981"></i>Rendah<br>'
+            + '<i style="background:#eab308"></i>Sedang<br>'
+            + '<i style="background:#ef4444"></i>Tinggi<br>'
+            + '<i style="background:#cbd5e1"></i>Belum tersedia';
+        return div;
+    };
+    predictionLegend.addTo(predictionRiskMap);
 </script>
 @endpush

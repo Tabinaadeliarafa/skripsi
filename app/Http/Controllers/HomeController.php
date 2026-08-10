@@ -223,8 +223,7 @@ class HomeController extends Controller
         }
         arsort($chartWilayah);
 
-        // --- PREDIKSI LSTM ---
-        // Agregasi bulanan memberi LSTM lebih banyak titik latih daripada hanya 5 total tahunan.
+        // PREDIKSI LSTM
         $monthlySeries = [];
         foreach ($data as $item) {
             $period = date('Ym', strtotime($item->date));
@@ -240,8 +239,6 @@ class HomeController extends Controller
         }
         ksort($totalPerYear);
 
-        // Tahun yang belum lengkap tidak ditampilkan sebagai data historis ketika
-        // tahun tersebut merupakan tahun yang sedang diproyeksikan oleh LSTM.
         if (
             $lstmResult['status'] === 'ok'
             && isset($lstmResult['last_historical_year'])
@@ -263,10 +260,22 @@ class HomeController extends Controller
             'method' => $lstmResult['method'] ?? 'LSTM',
             'rmse' => $lstmResult['rmse'] ?? null,
             'risk' => null,
+            'forecast_year' => null,
+            'monthly_labels' => [],
+            'monthly_forecast' => [],
         ];
 
         if ($lstmResult['status'] === 'ok') {
             $forecastTotal = (int) $lstmResult['forecast_total'];
+            $chartPrediksi['forecast_year'] = (int) $lstmResult['forecast_year'];
+            $chartPrediksi['monthly_labels'] = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+            ];
+            $chartPrediksi['monthly_forecast'] = array_map(
+                fn ($value) => round(max(0, (float) $value), 2),
+                array_slice($lstmResult['monthly_forecast'] ?? [], 0, 12)
+            );
             $chartPrediksi['risk'] = $this->calculatePredictionRisk(
                 array_values($totalPerYear),
                 $forecastTotal
@@ -281,7 +290,95 @@ class HomeController extends Controller
             }
         }
 
-        return view('pages.visualisasi', compact('kecamatans', 'jenisBencanas', 'request', 'chartJenis', 'chartTahun', 'chartWilayah', 'isKecamatanSelected', 'chartPrediksi'));
+        // PETA RISIKO PREDIKSI PER KECAMATAN
+        $mapQuery = LaporanBencana::with('desa.kecamatan');
+        if ($request->filled('start_date')) {
+            $mapQuery->whereDate('date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $mapQuery->whereDate('date', '<=', $request->end_date);
+        }
+        if ($request->filled('jenis_bencana_id')) {
+            $mapQuery->where('jenis_bencana_id', $request->jenis_bencana_id);
+        }
+
+        $mapRows = $mapQuery->get()->groupBy(
+            fn ($item) => $item->desa?->kecamatan?->id
+        );
+        $predictionMap = [];
+        $forecastTotals = [];
+
+        $historicalCounts = [];
+        foreach ($kecamatans as $kecamatan) {
+            $historicalCounts[$kecamatan->id] = $mapRows
+                ->get($kecamatan->id, collect())
+                ->count();
+        }
+
+        $allocatedForecasts = [];
+        $totalHistoricalCount = array_sum($historicalCounts);
+
+        if ($lstmResult['status'] === 'ok' && $totalHistoricalCount > 0) {
+            $overallForecastTotal = max(0, (int) $lstmResult['forecast_total']);
+            $remainders = [];
+            $allocatedTotal = 0;
+
+            foreach ($historicalCounts as $kecamatanId => $historicalCount) {
+                $rawForecast = $overallForecastTotal
+                    * ($historicalCount / $totalHistoricalCount);
+                $allocatedForecasts[$kecamatanId] = (int) floor($rawForecast);
+                $remainders[$kecamatanId] = $rawForecast - floor($rawForecast);
+                $allocatedTotal += $allocatedForecasts[$kecamatanId];
+            }
+            
+            arsort($remainders, SORT_NUMERIC);
+            $remaining = $overallForecastTotal - $allocatedTotal;
+            foreach (array_keys($remainders) as $kecamatanId) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $allocatedForecasts[$kecamatanId]++;
+                $remaining--;
+            }
+        }
+
+        foreach ($kecamatans as $kecamatan) {
+            $forecastTotal = $allocatedForecasts[$kecamatan->id] ?? null;
+            $hasPrediction = $forecastTotal !== null;
+
+            $predictionMap[$kecamatan->name] = [
+                'name' => $kecamatan->name,
+                'status' => $hasPrediction ? 'ok' : 'unavailable',
+                'message' => $hasPrediction
+                    ? null
+                    : ($lstmResult['message'] ?? 'Data historis belum cukup untuk prediksi.'),
+                'forecast_year' => $hasPrediction
+                    ? ($lstmResult['forecast_year'] ?? null)
+                    : null,
+                'forecast_total' => $forecastTotal,
+                'rmse' => $hasPrediction ? ($lstmResult['rmse'] ?? null) : null,
+                'risk' => null,
+            ];
+
+            if ($hasPrediction) {
+                $forecastTotals[] = $forecastTotal;
+            }
+        }
+
+        // Kategori warna bersifat relatif terhadap distribusi hasil prediksi seluruh
+        // kecamatan: 33% terbawah rendah, 34% tengah sedang, dan 33% teratas tinggi.
+        foreach ($predictionMap as &$prediction) {
+            if ($prediction['forecast_total'] !== null) {
+                $prediction['risk'] = $this->calculatePredictionRisk(
+                    $forecastTotals,
+                    $prediction['forecast_total']
+                );
+            }
+        }
+        unset($prediction);
+
+        return view('pages.visualisasi', compact('kecamatans', 'jenisBencanas', 'request', 'chartJenis', 'chartTahun', 'chartWilayah', 'isKecamatanSelected', 'chartPrediksi', 'predictionMap'));
     }
 
     public function laporan(Request $request)
