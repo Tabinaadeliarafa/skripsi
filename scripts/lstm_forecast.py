@@ -240,6 +240,10 @@ def main() -> None:
     actual = scaler.inverse(y)
     rmse = float(math.sqrt(np.mean((actual - fitted) ** 2)))
 
+    # Pasangan periode, nilai aktual, dan hasil LSTM inilah yang digunakan
+    # langsung dalam perhitungan RMSE dan ditampilkan sebagai grafik akurasi.
+    evaluation_periods = periods[look_back:]
+
     rolling = scaled.tolist()
     monthly_forecast: list[float] = []
     # Allow a moderate increase above the historical maximum, but block exploding recursion.
@@ -263,6 +267,9 @@ def main() -> None:
         "forecast_year": forecast_year,
         "forecast_total": max(0, forecast_total),
         "monthly_forecast": [round(value, 2) for value in monthly_forecast],
+        "evaluation_periods": evaluation_periods,
+        "evaluation_actual": [round(float(value), 2) for value in actual],
+        "evaluation_predictions": [round(float(value), 2) for value in fitted],
         "rmse": round(rmse, 4),
         "look_back": look_back,
         "training_points": int(len(values)),

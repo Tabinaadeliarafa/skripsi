@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.env.*
+vendor
+node_modules
+.venv
+venv
+__pycache__
+storage/logs/*
+tests
+README.md

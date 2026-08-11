@@ -23,7 +23,7 @@ class LstmPredictionService
         }
 
         ksort($monthlySeries);
-        $cacheKey = 'lstm_forecast:v2:' . sha1(json_encode([
+        $cacheKey = 'lstm_forecast:v3:' . sha1(json_encode([
             'series' => $monthlySeries,
             'look_back' => config('lstm.look_back'),
             'epochs' => config('lstm.epochs'),
@@ -121,6 +121,9 @@ class LstmPredictionService
             'forecast_year' => null,
             'forecast_total' => null,
             'monthly_forecast' => [],
+            'evaluation_periods' => [],
+            'evaluation_actual' => [],
+            'evaluation_predictions' => [],
             'rmse' => null,
         ];
     }

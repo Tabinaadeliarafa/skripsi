@@ -180,7 +180,7 @@ class HomeController extends Controller
     {
         $kecamatans = Kecamatan::select('id', 'name')->get();
         $jenisBencanas = JenisBencana::all();
-        
+
         $query = LaporanBencana::with(['jenisBencana', 'desa.kecamatan']);
         $query = $this->applyFilters($query, $request);
         $data = $query->get();
@@ -232,29 +232,32 @@ class HomeController extends Controller
 
         $lstmResult = app(LstmPredictionService::class)->forecast($monthlySeries);
 
-        $totalPerYear = [];
+        // Total dari periode filter dipakai sebagai data latih LSTM.
+        $trainingTotalPerYear = [];
         foreach ($data as $item) {
             $year = (int) date('Y', strtotime($item->date));
-            $totalPerYear[$year] = ($totalPerYear[$year] ?? 0) + 1;
+            $trainingTotalPerYear[$year] = ($trainingTotalPerYear[$year] ?? 0) + 1;
         }
-        ksort($totalPerYear);
+        ksort($trainingTotalPerYear);
 
         if (
             $lstmResult['status'] === 'ok'
             && isset($lstmResult['last_historical_year'])
         ) {
             $lastHistoricalYear = (int) $lstmResult['last_historical_year'];
-            $totalPerYear = array_filter(
-                $totalPerYear,
+            $trainingTotalPerYear = array_filter(
+                $trainingTotalPerYear,
                 fn ($value, $year) => (int) $year <= $lastHistoricalYear,
                 ARRAY_FILTER_USE_BOTH
             );
         }
 
         $chartPrediksi = [
-            'labels' => array_map('strval', array_keys($totalPerYear)),
-            'historis' => array_values($totalPerYear),
-            'lstm' => array_fill(0, count($totalPerYear), null),
+            'labels' => [],
+            'aktual' => [],
+            'lstm_evaluasi' => [],
+            'lstm_forecast' => [],
+            'forecast_start_index' => null,
             'status' => $lstmResult['status'],
             'message' => $lstmResult['message'] ?? null,
             'method' => $lstmResult['method'] ?? 'LSTM',
@@ -268,8 +271,8 @@ class HomeController extends Controller
         if ($lstmResult['status'] === 'ok') {
             $forecastTotal = (int) $lstmResult['forecast_total'];
             $chartPrediksi['forecast_year'] = (int) $lstmResult['forecast_year'];
-            $chartPrediksi['monthly_labels'] = [
-                'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+            $monthNames = [
+                1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
                 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
             ];
             $chartPrediksi['monthly_forecast'] = array_map(
@@ -277,16 +280,42 @@ class HomeController extends Controller
                 array_slice($lstmResult['monthly_forecast'] ?? [], 0, 12)
             );
             $chartPrediksi['risk'] = $this->calculatePredictionRisk(
-                array_values($totalPerYear),
+                array_values($trainingTotalPerYear),
                 $forecastTotal
             );
-            $chartPrediksi['labels'][] = (string) $lstmResult['forecast_year'];
-            $chartPrediksi['historis'][] = null;
-            $chartPrediksi['lstm'][] = $forecastTotal;
 
-            // Sambungkan garis prediksi dari nilai aktual terakhir agar grafik mudah dibaca.
-            if (count($chartPrediksi['lstm']) >= 2 && $totalPerYear !== []) {
-                $chartPrediksi['lstm'][count($chartPrediksi['lstm']) - 2] = end($totalPerYear);
+            $evaluationPeriods = $lstmResult['evaluation_periods'] ?? [];
+            $evaluationActual = $lstmResult['evaluation_actual'] ?? [];
+            $evaluationPredictions = $lstmResult['evaluation_predictions'] ?? [];
+            $evaluationCount = min(
+                count($evaluationPeriods),
+                count($evaluationActual),
+                count($evaluationPredictions)
+            );
+
+            for ($index = 0; $index < $evaluationCount; $index++) {
+                $period = (string) $evaluationPeriods[$index];
+                $month = (int) substr($period, 4, 2);
+                $year = substr($period, 0, 4);
+                $chartPrediksi['labels'][] = ($monthNames[$month] ?? $month) . ' ' . $year;
+                $chartPrediksi['aktual'][] = round((float) $evaluationActual[$index], 2);
+                $chartPrediksi['lstm_evaluasi'][] = round((float) $evaluationPredictions[$index], 2);
+                $chartPrediksi['lstm_forecast'][] = null;
+            }
+
+            // Garis ramalan masa depan disambungkan dari hasil evaluasi terakhir.
+            if ($evaluationCount > 0) {
+                $chartPrediksi['forecast_start_index'] = $evaluationCount;
+                $chartPrediksi['lstm_forecast'][$evaluationCount - 1]
+                    = $chartPrediksi['lstm_evaluasi'][$evaluationCount - 1];
+            }
+
+            foreach ($chartPrediksi['monthly_forecast'] as $monthIndex => $value) {
+                $chartPrediksi['labels'][] = $monthNames[$monthIndex + 1]
+                    . ' ' . $chartPrediksi['forecast_year'];
+                $chartPrediksi['aktual'][] = null;
+                $chartPrediksi['lstm_evaluasi'][] = null;
+                $chartPrediksi['lstm_forecast'][] = $value;
             }
         }
 

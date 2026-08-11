@@ -66,8 +66,8 @@
     <!-- Line Chart Prediksi -->
     <div class="bg-brandSurface p-6 rounded-xl border border-gray-200 shadow-sm col-span-1 lg:col-span-3 mt-2">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-base font-bold text-gray-800">Prediksi Tren Kejadian (LSTM)</h3>
-            <span class="text-xs font-medium bg-secondary/10 text-secondary px-2.5 py-1 rounded-md">{{ !empty($chartPrediksi['labels']) ? 'Proyeksi Tahun ' . last($chartPrediksi['labels']) : 'LSTM' }}</span>
+            <h3 class="text-base font-bold text-gray-800">Perbandingan Data Aktual dan Hasil LSTM</h3>
+            <span class="text-xs font-medium bg-secondary/10 text-secondary px-2.5 py-1 rounded-md">{{ !empty($chartPrediksi['forecast_year']) ? 'Proyeksi Tahun ' . $chartPrediksi['forecast_year'] : 'LSTM' }}</span>
         </div>
         @if(($chartPrediksi['status'] ?? 'unavailable') !== 'ok')
             <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -75,7 +75,7 @@
             </div>
         @elseif(isset($chartPrediksi['rmse']))
             <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                <span>Metode: {{ $chartPrediksi['method'] }} · RMSE data latih: {{ $chartPrediksi['rmse'] }}</span>
+                <span>Metode: {{ $chartPrediksi['method'] }} · RMSE evaluasi aktual vs hasil LSTM: {{ $chartPrediksi['rmse'] }}</span>
                 @if(!empty($chartPrediksi['risk']))
                     <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold"
                           style="color: {{ $chartPrediksi['risk']['color'] }}; border-color: {{ $chartPrediksi['risk']['color'] }}33; background-color: {{ $chartPrediksi['risk']['color'] }}14;">
@@ -271,12 +271,16 @@
     var optionsPrediksi = {
         series: [
             {
-                name: 'Data Historis',
-                data: chartPrediksi.historis
+                name: 'Data Aktual',
+                data: chartPrediksi.aktual
+            },
+            {
+                name: 'Hasil LSTM (Evaluasi)',
+                data: chartPrediksi.lstm_evaluasi
             },
             {
                 name: 'LSTM (Prediksi)',
-                data: chartPrediksi.lstm
+                data: chartPrediksi.lstm_forecast
             }
         ],
         chart: {
@@ -298,17 +302,17 @@
                 }
             }
         },
-        colors: ['#D45B1F', '#3b82f6'],
+        colors: ['#D45B1F', '#3b82f6', '#3b82f6'],
         stroke: {
-            width: [3, 3],
+            width: [3, 3, 3],
             curve: 'smooth',
-            dashArray: [0, 5]
+            dashArray: [0, 0, 5]
         },
         markers: {
             size: 5,
             discrete: chartPrediksi.risk ? [
                 {
-                    seriesIndex: 1,
+                    seriesIndex: 2,
                     dataPointIndex: chartPrediksi.labels.length - 1,
                     fillColor: chartPrediksi.risk.color,
                     strokeColor: '#ffffff',
@@ -323,11 +327,11 @@
         annotations: chartPrediksi.status === 'ok' ? {
             xaxis: [
                 {
-                    x: chartPrediksi.labels[chartPrediksi.labels.length - 1],
+                    x: chartPrediksi.labels[chartPrediksi.forecast_start_index],
                     borderColor: chartPrediksi.risk?.color || '#3b82f6',
                     strokeDashArray: 4,
                     label: {
-                        text: 'Tahun Prediksi',
+                        text: 'Mulai Prediksi ' + chartPrediksi.forecast_year,
                         orientation: 'horizontal',
                         offsetY: -5,
                         style: {
@@ -349,7 +353,7 @@
                 formatter: function (val, opts) {
                     if (val === null) return "Tidak ada data historis";
 
-                    const isForecastPoint = opts.seriesIndex === 1
+                    const isForecastPoint = opts.seriesIndex === 2
                         && opts.dataPointIndex === chartPrediksi.labels.length - 1;
 
                     if (isForecastPoint && chartPrediksi.risk) {
